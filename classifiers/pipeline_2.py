@@ -18,7 +18,7 @@ from mlxtend.classifier import EnsembleVoteClassifier
 from sklearn import manifold
 from operator import mul
 import sys
-sys.path.append('/Users/rileystockton/Desktop/numerai/functions')
+sys.path.append('../functions')
 from classifier_functions import *
 
 def main():
