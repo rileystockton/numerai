@@ -9,7 +9,7 @@ from sklearn.ensemble import AdaBoostClassifier
 from itertools import combinations
 from sklearn import linear_model
 from sklearn.feature_selection import RFE, RFECV
-from tsne import bh_sne
+# from tsne import bh_sne
 from sklearn.preprocessing import PolynomialFeatures
 import time
 
@@ -75,40 +75,40 @@ def calculate_accuracy(script_name, model, features_test, targets_test):
         print("{} - Logloss: {}".format(script_name, logloss))
 
 
-def my_tsne(features, features_train, features_test, targets_train, targets_test, tournament_data, perplexity, dimensions=2, polynomial=False):
-
-    X_train = features_train.values
-    y_train = targets_train.values
-
-    X_test = features_test.values
-    y_test = targets_test.values
-
-    X_tournament = tournament_data[features].values
-
-    X_all = np.concatenate([X_train, X_test, X_tournament], axis=0)
-
-    if polynomial:
-        poly = PolynomialFeatures(degree=2)
-        X_all = poly.fit_transform(X_all)
-
-    print('Running TSNE (perplexity: {}, dimensions: {}, polynomial: {})...'.format(perplexity, dimensions, polynomial))
-    start_time = time.time()
-    tsne_all = bh_sne(X_all, d=dimensions, perplexity=float(perplexity))
-    print('TSNE: {}s'.format(time.time() - start_time))
-
-    tsne_train = tsne_all[:X_train.shape[0]]
-    assert(len(tsne_train) == len(X_train))
-    features_train['tsne_feature_1'] = [x[0] for x in tsne_train]
-    features_train['tsne_feature_2'] = [x[1] for x in tsne_train]
-
-    tsne_test = tsne_all[X_train.shape[0]:X_train.shape[0]+X_test.shape[0]]
-    assert(len(tsne_test) == len(X_test))
-    features_test['tsne_feature_1'] = [x[0] for x in tsne_test]
-    features_test['tsne_feature_2'] = [x[1] for x in tsne_test]
-
-    tsne_tournament = tsne_all[X_train.shape[0]+X_test.shape[0]:X_train.shape[0]+X_test.shape[0]+X_tournament.shape[0]]
-    assert(len(tsne_tournament) == len(X_tournament))
-    tournament_data['tsne_feature_1'] = [x[0] for x in tsne_tournament]
-    tournament_data['tsne_feature_2'] = [x[1] for x in tsne_tournament]
-
-    return features_train, features_test, tournament_data
+# def my_tsne(features, features_train, features_test, targets_train, targets_test, tournament_data, perplexity, dimensions=2, polynomial=False):
+#
+#     X_train = features_train.values
+#     y_train = targets_train.values
+#
+#     X_test = features_test.values
+#     y_test = targets_test.values
+#
+#     X_tournament = tournament_data[features].values
+#
+#     X_all = np.concatenate([X_train, X_test, X_tournament], axis=0)
+#
+#     if polynomial:
+#         poly = PolynomialFeatures(degree=2)
+#         X_all = poly.fit_transform(X_all)
+#
+#     print('Running TSNE (perplexity: {}, dimensions: {}, polynomial: {})...'.format(perplexity, dimensions, polynomial))
+#     start_time = time.time()
+#     tsne_all = bh_sne(X_all, d=dimensions, perplexity=float(perplexity))
+#     print('TSNE: {}s'.format(time.time() - start_time))
+#
+#     tsne_train = tsne_all[:X_train.shape[0]]
+#     assert(len(tsne_train) == len(X_train))
+#     features_train['tsne_feature_1'] = [x[0] for x in tsne_train]
+#     features_train['tsne_feature_2'] = [x[1] for x in tsne_train]
+#
+#     tsne_test = tsne_all[X_train.shape[0]:X_train.shape[0]+X_test.shape[0]]
+#     assert(len(tsne_test) == len(X_test))
+#     features_test['tsne_feature_1'] = [x[0] for x in tsne_test]
+#     features_test['tsne_feature_2'] = [x[1] for x in tsne_test]
+#
+#     tsne_tournament = tsne_all[X_train.shape[0]+X_test.shape[0]:X_train.shape[0]+X_test.shape[0]+X_tournament.shape[0]]
+#     assert(len(tsne_tournament) == len(X_tournament))
+#     tournament_data['tsne_feature_1'] = [x[0] for x in tsne_tournament]
+#     tournament_data['tsne_feature_2'] = [x[1] for x in tsne_tournament]
+#
+#     return features_train, features_test, tournament_data
