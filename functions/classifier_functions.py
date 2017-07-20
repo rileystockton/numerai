@@ -73,6 +73,7 @@ def calculate_accuracy(script_name, model, features_test, targets_test):
         prob_predictions_test = model.predict(features_test)
         logloss = log_loss(targets_test,prob_predictions_test)
         print("{} - Logloss: {}".format(script_name, logloss))
+    return logloss
 
 
 # def my_tsne(features, features_train, features_test, targets_train, targets_test, tournament_data, perplexity, dimensions=2, polynomial=False):
