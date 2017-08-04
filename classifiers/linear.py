@@ -43,18 +43,39 @@ def main():
 
     ### Feature Creation ###
     print("{} - Creating New Features...".format(script_name))
+    for cmb in combinations(features,2):
+        for function in ['addition','subtraction','multiplication','division']:
+            if function == 'addition':
+                new_feature_name = "_+_".join(cmb)
+                training_data[new_feature_name] = training_data[cmb[0]] + training_data[cmb[1]]
+                validation_data[new_feature_name] = validation_data[cmb[0]] + validation_data[cmb[1]]
+                test_data[new_feature_name] = test_data[cmb[0]] + test_data[cmb[1]]
+                tournament_data[new_feature_name] = tournament_data[cmb[0]] + tournament_data[cmb[1]]
+            elif function == 'subtraction':
+                new_feature_name = "_-_".join(cmb)
+                training_data[new_feature_name] = training_data[cmb[0]] - training_data[cmb[1]]
+                validation_data[new_feature_name] = validation_data[cmb[0]] - validation_data[cmb[1]]
+                test_data[new_feature_name] = test_data[cmb[0]] - test_data[cmb[1]]
+                tournament_data[new_feature_name] = tournament_data[cmb[0]] - tournament_data[cmb[1]]
+            elif function == 'multiplication':
+                new_feature_name = "_*_".join(cmb)
+                training_data[new_feature_name] = training_data[cmb[0]] * training_data[cmb[1]]
+                validation_data[new_feature_name] = validation_data[cmb[0]] * validation_data[cmb[1]]
+                test_data[new_feature_name] = test_data[cmb[0]] * test_data[cmb[1]]
+                tournament_data[new_feature_name] = tournament_data[cmb[0]] * tournament_data[cmb[1]]
+            elif function == 'division':
+                new_feature_name = "_/_".join(cmb)
+                training_data[new_feature_name] = training_data[cmb[0]] / (training_data[cmb[1]]+0.01)
+                validation_data[new_feature_name] = validation_data[cmb[0]] / (validation_data[cmb[1]]+0.01)
+                test_data[new_feature_name] = test_data[cmb[0]] / (test_data[cmb[1]]+0.01)
+                tournament_data[new_feature_name] = tournament_data[cmb[0]] / (tournament_data[cmb[1]]+0.01)
+
+    features = ['feature1', 'feature2', 'feature3', 'feature4', 'feature5', 'feature6', 'feature7', 'feature8', 'feature9', 'feature10', 'feature11', 'feature12', 'feature13', 'feature14', 'feature15', 'feature16', 'feature17', 'feature18', 'feature19', 'feature20', 'feature21', 'feature2_*_feature17', 'feature13_/_feature16', 'feature2_/_feature6', 'feature4_/_feature17', 'feature8_/_feature13', 'feature8_*_feature19', 'feature5_/_feature11', 'feature1_*_feature19', 'feature1_+_feature7', 'feature1_-_feature19', 'feature5_-_feature21', 'feature14_-_feature18', 'feature20_*_feature21', 'feature7_-_feature18', 'feature5_+_feature15', 'feature1_-_feature8', 'feature8_+_feature20', 'feature4_+_feature19', 'feature5_-_feature19', 'feature12_-_feature19', 'feature3_+_feature4', 'feature5_+_feature7', 'feature14_+_feature15', 'feature18_+_feature19', 'feature5_+_feature19', 'feature5_/_feature10', 'feature2_+_feature5', 'feature8_-_feature13', 'feature11_+_feature14', 'feature8_-_feature15', 'feature13_+_feature19', 'feature1_*_feature7', 'feature10_/_feature16', 'feature14_*_feature20', 'feature2_+_feature11', 'feature11_/_feature19', 'feature3_-_feature16', 'feature3_-_feature14', 'feature8_+_feature17', 'feature7_-_feature21', 'feature1_+_feature16', 'feature3_-_feature18', 'feature2_-_feature3', 'feature1_*_feature6', 'feature7_-_feature8', 'feature7_-_feature15', 'feature14_-_feature17', 'feature17_-_feature18', 'feature4_-_feature8', 'feature11_/_feature17', 'feature11_-_feature15', 'feature3_-_feature21', 'feature5_+_feature21', 'feature7_+_feature14', 'feature12_+_feature14', 'feature8_+_feature21', 'feature8_+_feature13', 'feature15_+_feature21', 'feature1_+_feature21', 'feature18_-_feature21', 'feature5_+_feature17']
 
     features_train = training_data[features]
     features_validation = validation_data[features]
     features_test = test_data[features]
     features_tournament = tournament_data[features]
-
-    corr = features_train.corr()
-    fig, ax = plt.subplots(1, 2, figsize=(8, 4))
-    sns.heatmap(corr,
-                xticklabels=corr.columns.values,
-                yticklabels=corr.columns.values)
-    # sns.plt.show()
 
     ### create classifiers ###
     model = make_pipeline(
@@ -64,7 +85,8 @@ def main():
     ### train classifiers ###
     print("{} - Training...".format(script_name))
     model.fit(features_train, targets_train)
-    calculate_accuracy(script_name, model, features_validation, targets_validation)
+    logloss = cross_val_score(model, features_train, targets_train, cv=3, scoring='neg_mean_squared_error')
+    print("%s - Logloss: %0.6f (+/- %0.6f)" % (script_name, logloss.mean(), logloss.std() * 2))
 
     prob_predictions_validation = model.predict(features_validation)
     prob_predictions_validation = pd.DataFrame(data={'probability':prob_predictions_validation})

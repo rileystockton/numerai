@@ -42,9 +42,7 @@ def main():
 
     ### Feature Creation ###
     print("{} - Creating New Features...".format(script_name))
-    saved_features = []
-    benchmark = 0.692417434758
-    result_file = '../rfc_test.txt'
+
     comb = list(combinations(features,2))
     shuffle(comb)
     for cmb in comb:
@@ -73,37 +71,44 @@ def main():
                 validation_data[new_feature_name] = validation_data[cmb[0]] / (validation_data[cmb[1]]+0.01)
                 test_data[new_feature_name] = test_data[cmb[0]] / (test_data[cmb[1]]+0.01)
                 tournament_data[new_feature_name] = tournament_data[cmb[0]] / (tournament_data[cmb[1]]+0.01)
+    features = [f for f in list(training_data) if "feature" in f]
 
-    new_features = [f for f in list(training_data) if "_feature" in f]
-    shuffle(new_features)
-    for nf in new_features:
+    cor = training_data.corr()['target']
+    cor = cor.drop('id')
+    cor = cor.drop('target')
+    cor = cor.abs()
+    cor = cor.sort_values(ascending=False)
+    print cor.head(5)
+
+    new_features = []
+    benchmark = 1
+    result_file = '../rfc_combo_test.txt'
+
+    for nf in cor.keys():
         print nf
-        test_features = list(features)
-        test_features.append(nf)
-        features_train = training_data[test_features]
-        features_validation = validation_data[test_features]
-        features_test = test_data[test_features]
-        features_tournament = tournament_data[test_features]
+        new_features.append(nf)
+        # print new_features
+        features_train = training_data[new_features]
+        features_validation = validation_data[new_features]
+        features_test = test_data[new_features]
+        features_tournament = tournament_data[new_features]
         ### create classifiers ###
         model = make_pipeline(
-            StandardScaler(),
-            IPCA(),
             RFC(n_estimators=25, max_depth=5)
         )
+
         ### train classifiers ###
         print("{} - Training...".format(script_name))
-        loglosses = []
-        for i in range(3):
-            model.fit(features_train, targets_train)
-            logloss = calculate_accuracy(script_name, model, features_validation, targets_validation)
-            loglosses.append(logloss)
-        avg_logloss = sum(loglosses)/len(loglosses)
-        if avg_logloss < benchmark:
-            features.append(nf)
-            print "{} - Reduced Logloss to {}".format(nf, avg_logloss)
-            benchmark = avg_logloss
+        model.fit(features_train, targets_train)
+        score = cross_val_score(model, features_train, targets_train, cv=5, scoring='neg_log_loss')
+        mse = -score.mean()
+        if mse < benchmark:
+            print "{} - Reduced Logloss to {}".format(nf, mse)
+            benchmark = mse
             with open(result_file, 'a') as f:
-                f.write('%s : %s\n' % (features, avg_logloss))
+                f.write('%s : %s\n' % (new_features, mse))
+        else:
+            new_features.remove(nf)
 
 if __name__ == '__main__':
     main()

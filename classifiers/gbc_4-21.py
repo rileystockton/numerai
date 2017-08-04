@@ -53,6 +53,9 @@ def main():
     features_test = test_data[features]
     features_tournament = tournament_data[features]
 
+    ### Remove Outliers ###
+    features_train, targets_train = tukey_pca_outlier_removal(features_train, targets_train)
+
     ### create classifiers ###
     model = make_pipeline(
         StandardScaler(),
@@ -63,7 +66,8 @@ def main():
     ### train classifiers ###
     print("{} - Training...".format(script_name))
     model.fit(features_train, targets_train)
-    calculate_accuracy(script_name, model, features_validation, targets_validation)
+    logloss = cross_val_score(model, features_train, targets_train, cv=3, scoring='neg_log_loss')
+    print("%s - Logloss: %0.6f (+/- %0.6f)" % (script_name, logloss.mean(), logloss.std() * 2))
 
     prob_predictions_validation = model.predict_proba(features_validation)
     prob_predicitons_validation = prob_predictions_validation[:, 1]

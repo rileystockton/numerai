@@ -81,18 +81,26 @@ def main():
         ('mlp', MLPClassifier())
     ])
 
+    ### create classifiers ###
+    model_6 = Pipeline([
+        # PolynomialFeatures(),
+        # Normalizer(),
+        ('ipca', IPCA()),
+        ('rfc', RFC(n_estimators=25))
+    ])
+
     parameters = {
-       'mlp__hidden_layer_sizes': [(3,10)],
-       'mlp__solver': ['lbfgs'],
-       'mlp__alpha': [0.0001]
+       'rfc__max_depth': [3,4,5],
+       'ipca__n_components': [3,4,5]
     }
 
-    model = GS(estimator=model_5, param_grid=parameters)
+    model = GS(estimator=model_6, param_grid=parameters)
 
     ### train classifiers ###
     print("{} - Training...".format(script_name))
     model.fit(features_train, targets_train)
-    calculate_accuracy(script_name, model, features_validation, targets_validation)
+    logloss = cross_val_score(model, features_train, targets_train, cv=3, scoring='neg_log_loss')
+    print("%s - Logloss: %0.6f (+/- %0.6f)" % (script_name, logloss.mean(), logloss.std() * 2))
     print("{} - Best Hyperparameters: {}".format(script_name,str(model.best_params_)))
     prob_predictions_test = model.predict_proba(features_tournament)
     results = prob_predictions_test[:, 1]

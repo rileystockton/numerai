@@ -43,25 +43,10 @@ def main():
     ### Feature Creation ###
     print("{} - Creating New Features...".format(script_name))
 
-    ### 2-combo multiplication ###
-    # for cmb in combinations(features, 2):
-    #     new_feature_name = "-".join(cmb)
-    #     new_feature_training = training_data[cmb[0]] * training_data[cmb[1]]
-    #     new_feature_validation = validation_data[cmb[0]] * validation_data[cmb[1]]
-    #     new_feature_test = test_data[cmb[0]] * test_data[cmb[1]]
-    #     new_feature_tournament = tournament_data[cmb[0]] * tournament_data[cmb[1]]
-    #     training_data[new_feature_name] = new_feature_training
-    #     validation_data[new_feature_name] = new_feature_validation
-    #     test_data[new_feature_name] = new_feature_test
-    #     tournament_data[new_feature_name] = new_feature_tournament
-    # features = [f for f in list(training_data) if "feature" in f]
-    saved_features = []
-    benchmark = 0.692455274718
-    result_file = '../linear_combo_test.txt'
     comb = list(combinations(features,2))
     shuffle(comb)
     for cmb in comb:
-        for function in ['addition','subtraction','multiplication','division']:
+        for function in ['subtraction']:
             if function == 'addition':
                 new_feature_name = "_+_".join(cmb)
                 training_data[new_feature_name] = training_data[cmb[0]] + training_data[cmb[1]]
@@ -86,17 +71,27 @@ def main():
                 validation_data[new_feature_name] = validation_data[cmb[0]] / (validation_data[cmb[1]]+0.01)
                 test_data[new_feature_name] = test_data[cmb[0]] / (test_data[cmb[1]]+0.01)
                 tournament_data[new_feature_name] = tournament_data[cmb[0]] / (tournament_data[cmb[1]]+0.01)
+    features = [f for f in list(training_data) if "feature" in f]
 
-    new_features = [f for f in list(training_data) if "_feature" in f]
-    shuffle(new_features)
-    for nf in new_features:
+    cor = training_data.corr()['target']
+    cor = cor.drop('id')
+    cor = cor.drop('target')
+    cor = cor.abs()
+    cor = cor.sort_values(ascending=False)
+    print cor.head(5)
+
+    new_features = []
+    benchmark = 1
+    result_file = '../linear_combo_test.txt'
+
+    for nf in cor.keys():
         print nf
-        test_features = list(features)
-        test_features.append(nf)
-        features_train = training_data[test_features]
-        features_validation = validation_data[test_features]
-        features_test = test_data[test_features]
-        features_tournament = tournament_data[test_features]
+        new_features.append(nf)
+        # print new_features
+        features_train = training_data[new_features]
+        features_validation = validation_data[new_features]
+        features_test = test_data[new_features]
+        features_tournament = tournament_data[new_features]
         ### create classifiers ###
         model = make_pipeline(
             linear_model.Ridge(alpha=0.8)
@@ -105,13 +100,15 @@ def main():
         ### train classifiers ###
         print("{} - Training...".format(script_name))
         model.fit(features_train, targets_train)
-        logloss = calculate_accuracy(script_name, model, features_validation, targets_validation)
-        if logloss < benchmark:
-            features.append(nf)
-            print "{} - Reduced Logloss to {}".format(nf, logloss)
-            benchmark = logloss
+        score = cross_val_score(model, features_train, targets_train, cv=5, scoring='neg_mean_squared_error')
+        mse = -score.mean()
+        if mse < benchmark:
+            print "{} - Reduced Logloss to {}".format(nf, mse)
+            benchmark = mse
             with open(result_file, 'a') as f:
-                f.write('%s : %s\n' % (features, logloss))
+                f.write('%s : %s\n' % (new_features, mse))
+        else:
+            new_features.remove(nf)
 
 if __name__ == '__main__':
     main()

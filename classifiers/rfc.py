@@ -30,6 +30,8 @@ def main():
     seed = 9000
     np.random.seed(seed)
     final = sys.argv[1]
+    n_components_arg = int(sys.argv[2])
+    max_depth_arg = int(sys.argv[3])
     print("{} - Loading data...".format(script_name))
     training_data, validation_data, test_data, tournament_data, tournament_ids, targets_train, targets_validation = get_numerai_data('../data/')
     features = [f for f in list(training_data) if "feature" in f]
@@ -50,30 +52,29 @@ def main():
 
     ### create classifiers ###
     model = make_pipeline(
-        # PolynomialFeatures(),
-        # Normalizer(),
-        IPCA(),
-        RFC(n_estimators=25, max_depth=5)
+        IPCA(n_components=n_components_arg),
+        RFC(n_estimators=25, max_depth=max_depth_arg)
     )
 
     ### train classifiers ###
     print("{} - Training...".format(script_name))
     model.fit(features_train, targets_train)
-    calculate_accuracy(script_name, model, features_validation, targets_validation)
+    logloss = cross_val_score(model, features_train, targets_train, cv=3, scoring='neg_log_loss')
+    print("%s - Logloss: %0.6f (+/- %0.6f)" % (script_name, logloss.mean(), logloss.std() * 2))
 
     prob_predictions_validation = model.predict_proba(features_validation)
     prob_predicitons_validation = prob_predictions_validation[:, 1]
     prob_predicitons_validation = pd.DataFrame(data={'probability':prob_predicitons_validation})
     joined = pd.DataFrame(targets_validation).join(prob_predicitons_validation)
     print("{} - Writing Validation Results...".format(script_name))
-    joined.to_csv("../predictions/{}_validation{}.csv".format(script_name, final_string), index=False)
+    joined.to_csv("../predictions/{}_{}_{}_validation{}.csv".format(script_name, n_components_arg, max_depth_arg, final_string), index=False)
 
     prob_predictions_tournament = model.predict_proba(features_tournament)
     results = prob_predictions_tournament[:, 1]
     results_df = pd.DataFrame(data={'probability':results})
     joined = pd.DataFrame(tournament_ids).join(results_df)
     print("{} - Writing...".format(script_name))
-    joined.to_csv("../predictions/{}{}.csv".format(script_name, final_string), index=False)
+    joined.to_csv("../predictions/{}_{}_{}{}.csv".format(script_name, n_components_arg, max_depth_arg, final_string), index=False)
 
 if __name__ == '__main__':
     main()
